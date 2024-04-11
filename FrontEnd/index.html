@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add User</title>
+    <style>
+        table { 
+            border-collapse: collapse; 
+            margin-bottom: 20px; 
+            width: 100%; 
+        } 
+  
+        th, 
+        td { 
+            border: 1px solid #ddd; 
+            padding: 8px; 
+            text-align: left; 
+        } 
+  
+        th { 
+            background-color: #4CAF50; 
+            color: #fff; 
+        } 
+    </style>
+</head>
+<body>
+    <h1>Add User</h1>
+    <form id="addUserForm">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name"><br>
+        <label for="age">Age:</label><br>
+        <input type="number" id="age" name="age"><br>
+        <label for="role">Role:</label><br>
+        <input type="text" id="role" name="role"><br><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>Items</h2>
+    <table id="customerTable">
+        <tr>
+            <th>id</th>
+            <th>name</th>
+            <th>age</th>
+            <th>role</th>
+            <th>Action</th>
+        </tr>
+    </table>
+    <script>
+        document.getElementById("addUserForm").addEventListener("submit", function(event) {
+            const formData = new FormData(event.target);
+            const userData = {
+                name: formData.get("name"),
+                age: formData.get("age"),
+                role: formData.get("role")
+            };
+            fetch('http://localhost:5000/Customer_Details', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); 
+                alert(data.message); 
+                event.preventDefault(); 
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.'); 
+            });
+            
+        });
+        fetch('http://localhost:5000/Customer_Details')
+        .then(response => {
+                console.log('Response:', response);
+                return response.json();
+        })
+        .then(customers => {
+            console.log(customers);
+                const table = document.getElementById('customerTable');
+                customers.forEach(customer => {
+                    const row = table.insertRow(-1);
+                    row.insertCell(0).textContent = customer.id;
+                    row.insertCell(1).textContent = customer.name;
+                    row.insertCell(2).textContent = customer.age;
+                    row.insertCell(3).textContent = customer.role;
+                    row.insertCell(4).innerHTML =
+                    '<button onclick="editData(this)">Edit</button>'+ "    " +
+                    '<button onclick="deleteData(this)">Delete</button>'; 
+                });
+            })
+            .catch(error => console.error('Error fetching customer details:', error));
+
+            function deleteData(button)
+            {
+                let row = button.parentNode.parentNode;
+                let id = row.cells[0].textContent; 
+
+                fetch(`http://localhost:5000/Customer_Details/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(res => {
+                    if (res.ok) {
+                        console.log('Customer details deleted successfully');
+                        row.parentNode.removeChild(row);
+                        alert('Data Deleted Succesfully');
+                    } else {
+                        console.error('Failed to delete customer details:', res.status);
+                    }
+                })
+                .catch(err => console.error('Error deleting the customer details:', err));
+            }
+            function editData(button) {
+                let row = button.parentNode.parentNode;
+                let id = row.cells[0].textContent; 
+                let name = row.cells[1].textContent; 
+                let age = row.cells[2].textContent; 
+                let role = row.cells[3].textContent; 
+
+                let nameInput = prompt("Enter the updated name:", name);
+                let ageInput = prompt("Enter the updated age:", age);
+                let roleInput = prompt("Enter the updated role:", role);
+
+                row.cells[1].textContent = nameInput; 
+                row.cells[2].textContent = ageInput; 
+                row.cells[3].textContent = roleInput; 
+
+                fetch(`http://localhost:5000/Customer_Details/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name: nameInput, age: ageInput, role: roleInput })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('User updated successfully');
+                        alert("Data updated Successfully");
+                    } else {
+                        throw new Error('Failed to update user');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating user:', error);
+                });
+            }
+
+    </script>
+</body>
+</html>
